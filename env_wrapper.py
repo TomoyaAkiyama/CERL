@@ -19,3 +19,6 @@ class EnvWrapper:
 
     def seed(self, seed):
         self.env.seed(seed)
+
+    def unwrapped(self):
+        return self.env

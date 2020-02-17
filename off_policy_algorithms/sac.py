@@ -36,16 +36,7 @@ class SAC:
         self.actor_optimizer = Adam(self.actor.parameters(), lr=lr)
         self.alpha_optimizer = Adam([self.log_alpha], lr=lr)
 
-    def select_action(self, state):
-        state = state.to(self.device)
-        action, _ = self.actor.sample(state)
-        return action.cpu().detach().numpy().flatten()
-
-    def deterministic_action(self, state):
-        state = state.to(self.device)
-        action, _ = self.actor.forward(state)
-        action = torch.tanh(action)
-        return action.cpu().detach().numpy().flatten()
+        self.rollout_actor = SACRolloutActor(state_dim, action_dim, hidden_sizes, wwid)
 
     def train(self, replay_buffer, batch_size=256):
         st, nx_st, ac, rw, mask = replay_buffer.random_batch(batch_size)
@@ -88,6 +79,12 @@ class SAC:
         for param, target_param in zip(self.critic.parameters(), self.target_critic.parameters()):
             target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
+        self.sync_rollout_actor()
+
+    def sync_rollout_actor(self):
+        for param, target_param in zip(self.actor.parameters(), self.rollout_actor.parameters()):
+            target_param.data.copy_(param.data.cpu())
+
     def save(self, path):
         torch.save(self.critic.state_dict(), os.path.join(path, 'critic.pth'))
         torch.save(self.target_critic.state_dict(), os.path.join(path, 'target_critic.pth'))
@@ -109,4 +106,26 @@ class SAC:
         self.log_alpha = torch.nn.Parameter(torch.load(os.path.join(path, 'log_alpha.pth')), requires_grad=True)
         self.alpha = self.log_alpha.exp()
 
+
+class SACRolloutActor:
+    def __init__(
+            self,
+            state_dim,
+            action_dim,
+            hidden_sizes,
+            wwid,
+    ):
+        self.actor = GaussianPolicy(state_dim, action_dim, hidden_sizes, wwid).eval()
+
+    def select_action(self, state):
+        action, _ = self.actor.sample(state)
+        return action.cpu().detach().numpy().flatten()
+
+    def deterministic_action(self, state):
+        action, _ = self.actor.forward(state)
+        action = torch.tanh(action)
+        return action.cpu().detach().numpy().flatten()
+
+    def parameters(self):
+        return self.actor.parameters()
 

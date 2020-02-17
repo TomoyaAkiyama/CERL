@@ -27,7 +27,6 @@ def roulette_wheel(probs, num_samples):
     out = np.random.choice(len(probs), size=num_samples, p=probs)
 
     print('UCB_prob_mass', ["%.2f" %i for i in probs])
-    print('Allocation', out)
     print()
 
     return out

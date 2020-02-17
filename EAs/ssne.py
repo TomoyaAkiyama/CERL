@@ -146,7 +146,7 @@ class SSNE:
     def epoch(self, gen, genealogy, pop, net_indices, fitness_evals, migration):
         self.gen += 1
 
-        num_elitists = int(self.args.elite_fraction) * len(fitness_evals)
+        num_elitists = int(self.args.elite_fraction * len(fitness_evals))
         if num_elitists < 2:
             num_elitists = 2
 

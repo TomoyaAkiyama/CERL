@@ -34,11 +34,3 @@ class Learner:
             self.value = fitness
         else:
             self.value = alpha * fitness + (1. - alpha) * self.value
-
-    def select_action(self, state):
-        action = self.algo.select_action(state)
-        return action
-
-    def deterministic_action(self, state):
-        action = self.algo.deterministic_action(state)
-        return action

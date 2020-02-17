@@ -12,7 +12,7 @@ def rollout_worker(index, task_pipe, result_pipe, explore, tmp_buffer, model_buc
         if identifier == 'TERMINATE':
             exit(0)
 
-        agent = model_bucket[identifier]
+        policy = model_bucket[identifier]
 
         fitness = 0.0
         total_frame = 0
@@ -22,9 +22,9 @@ def rollout_worker(index, task_pipe, result_pipe, explore, tmp_buffer, model_buc
 
         while True:
             if explore:
-                action = agent.select_action(torch.tensor(state.reshape(1, -1), dtype=torch.float))
+                action = policy.select_action(torch.tensor(state.reshape(1, -1), dtype=torch.float))
             else:
-                action = agent.deterministic_action(torch.tensor(state.reshape(1, -1), dtype=torch.float))
+                action = policy.deterministic_action(torch.tensor(state.reshape(1, -1), dtype=torch.float))
 
             next_state, reward, done, info = env.step(action)
             fitness += reward
@@ -32,7 +32,7 @@ def rollout_worker(index, task_pipe, result_pipe, explore, tmp_buffer, model_buc
             ep_frame += 1
 
             if tmp_buffer is not None:
-                done_buffer = done if ep_frame < env.env._max_episode_steps else False
+                done_buffer = done if ep_frame < env.unwrapped()._max_episode_steps else False
 
                 rollout_transition.append({
                     'state': state,

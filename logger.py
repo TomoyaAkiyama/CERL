@@ -34,7 +34,7 @@ class Logger:
         self.learner_fitnesses.append(item)
 
     def add_test_score(self, total_frame, test_score):
-        item = [total_frame] + test_score
+        item = [total_frame, test_score]
         self.test_scores.append(item)
 
     def save(self):
@@ -44,7 +44,7 @@ class Logger:
 
         file_name = 'allocation_counts.txt'
         file_path = os.path.join(self.save_dir, file_name)
-        np.savetxt(file_path, self.allocation_counts)
+        np.savetxt(file_path, self.allocation_counts, fmt='%d')
 
         file_name = 'population_fitnesses.txt'
         file_path = os.path.join(self.save_dir, file_name)

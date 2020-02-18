@@ -143,7 +143,7 @@ class SSNE:
         for param in (gene.parameters()):
             param.data.copy_(param.data)
 
-    def epoch(self, gen, genealogy, pop, net_indices, fitness_evals, migration):
+    def epoch(self, gen, genealogy, pop, fitness_evals, migration):
         self.gen += 1
 
         num_elitists = int(self.args.elite_fraction * len(fitness_evals))
@@ -157,11 +157,8 @@ class SSNE:
         num_offsprings = len(index_rank) - len(elitists_index) - len(migration)
         offsprings = self.selection_tournament(index_rank, num_offsprings, tournament_size=3)
 
-        elitists_index = [net_indices[i] for i in elitists_index]
-        offsprings = [net_indices[i] for i in offsprings]
-
         unselected = []
-        for net_index in net_indices:
+        for net_index in range(len(pop)):
             if net_index in offsprings or net_index in elitists_index:
                 continue
             else:
@@ -172,7 +169,7 @@ class SSNE:
         # Inheritance step (sync learners to population)
         for policy in migration:
             replaced_one = unselected.pop(0)
-            pop[replaced_one] = deepcopy(policy).eval()
+            pop[replaced_one] = deepcopy(policy)
             wwid = genealogy.asexual(int(policy.wwid.item()))
             pop[replaced_one].wwid[0] = wwid
 
@@ -184,7 +181,7 @@ class SSNE:
             else:
                 replaced_one = offsprings.pop(0)
             new_elitists.append(replaced_one)
-            pop[replaced_one] = deepcopy(pop[i]).eval()
+            pop[replaced_one] = deepcopy(pop[i])
             wwid = genealogy.asexual(int(pop[i].wwid.item()))
             pop[replaced_one].wwid[0] = wwid
             genealogy.elite(wwid, gen)
@@ -195,8 +192,8 @@ class SSNE:
         for i, j in zip(unselected[0::2], unselected[1::2]):
             off_i = np.random.choice(new_elitists)
             off_j = np.random.choice(offsprings)
-            pop[i] = deepcopy(pop[off_i]).eval()
-            pop[j] = deepcopy(pop[off_j]).eval()
+            pop[i] = deepcopy(pop[off_i])
+            pop[j] = deepcopy(pop[off_j])
             self.crossover_inplace(pop[i], pop[j])
             wwid1 = genealogy.crossover(gen)
             wwid2 = genealogy.crossover(gen)
@@ -213,7 +210,7 @@ class SSNE:
                 pop[j].wwid[0] = wwid2
 
         # mutate all genes in the population except the new elitists
-        for net_index in net_indices:
+        for net_index in range(len(pop)):
             if net_index not in new_elitists:
                 if np.random.rand() < self.args.mutation_prob:
                     self.mutate_inplace(pop[net_index])

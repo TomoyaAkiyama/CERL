@@ -9,6 +9,8 @@ import gym
 from cerl import CERL
 from logger import Logger
 
+np.set_printoptions(precision=3)
+
 
 class Parameters:
     def __init__(self):
@@ -21,12 +23,12 @@ class Parameters:
         self.capacity = 1000000
         self.batch_size = 256   # Batch size
         self.rollout_size = 10    # Size of learner rollouts
+        self.ucb_coefficient = 0.9  # Exploration coefficient in UCB
         dummy_env = gym.make(self.env_name)
         self.state_dim = dummy_env.observation_space.shape[0]
         self.action_dim = dummy_env.action_space.shape[0]
         self.hidden_sizes = [400, 300]
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.ucb_coefficient = 0.9  # Exploration coefficient in UCB
 
         # neuroevolution param
         self.pop_size = 10
@@ -36,10 +38,6 @@ class Parameters:
         self.weight_magnitude_limit = 10000000
 
         self.test_size = 10
-
-        # Save Results
-        self.savefolder = 'results/'
-        os.makedirs('results/', exist_ok=True)
 
 
 def main():
@@ -62,8 +60,8 @@ def main():
         pop_fitness, learner_fitness, allocation_count, test_mean, test_std, champ_wwid = agent.train(gen, logger)
 
         print('Gen {}, Frames {}, Frames/sec: {:.2f}'.format(gen, agent.total_frames, agent.total_frames / (time.time() - start_time)))
-        print('Population Fitness', ['{:.3f}'.format(fitness) for fitness in pop_fitness])
-        print('Learner Average Fitness', ['{:.3f}'.format(fitness) for fitness in learner_fitness])
+        print('Population Fitness', pop_fitness)
+        print('Learner Average Fitness', learner_fitness)
         print('Resource Allocation', allocation_count)
         try:
             print('Best Policy ever genealogy:', agent.genealogy.tree[int(agent.best_policy.wwid.item())].history)
@@ -73,11 +71,12 @@ def main():
         print()
 
         if test_mean is not None:
-            print('====================')
-            print('Test_score for the champion: {:.3f} ({:.3f})'.format(test_mean, test_std))
-            print('====================')
+            message = 'Test_score for the champion: {:.3f} ({:.3f})'.format(test_mean, test_std)
+            print('=' * len(message))
+            print(message)
+            print('=' * len(message))
 
-        if agent.total_frames > 10000:
+        if agent.total_frames > 100000:
             break
     logger.save()
 

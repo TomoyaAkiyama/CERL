@@ -1,15 +1,10 @@
-
 import numpy as np
 import torch
-from torch.multiprocessing import Manager
 
 
 class ReplayBuffer:
     def __init__(self, state_dim, action_dim, device, capacity):
         self.capacity = capacity
-
-        self.manager = Manager()
-        self.tmp_buffer = self.manager.list()
 
         self.state = np.zeros((capacity, state_dim))
         self.next_state = np.zeros((capacity, state_dim))
@@ -24,9 +19,8 @@ class ReplayBuffer:
     def __len__(self):
         return self._size
 
-    def refresh(self):
-        for _ in range(len(self.tmp_buffer)):
-            transition = self.tmp_buffer.pop()
+    def add_transitions(self, transitions):
+        for transition in transitions:
             self.state[self._step] = transition['state']
             self.next_state[self._step] = transition['next_state']
             self.action[self._step] = transition['action']
@@ -52,5 +46,3 @@ class ReplayBuffer:
             torch.tensor(rewards_batch, dtype=torch.float).to(self.device),
             torch.tensor(masks_batch, dtype=torch.float).to(self.device)
         )
-
-

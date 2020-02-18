@@ -3,7 +3,7 @@ import torch
 
 
 class ReplayBuffer:
-    def __init__(self, state_dim, action_dim, device, capacity):
+    def __init__(self, state_dim, action_dim, capacity):
         self.capacity = capacity
 
         self.state = np.zeros((capacity, state_dim))
@@ -12,7 +12,6 @@ class ReplayBuffer:
         self.reward = np.zeros((capacity, 1))
         self.mask = np.ones((capacity, 1))
 
-        self.device = device
         self._step = 0
         self._size = 0
 
@@ -40,9 +39,9 @@ class ReplayBuffer:
         masks_batch = self.mask[indices]
 
         return (
-            torch.tensor(state_batch, dtype=torch.float).to(self.device),
-            torch.tensor(next_state_batch, dtype=torch.float).to(self.device),
-            torch.tensor(actions_batch, dtype=torch.float).to(self.device),
-            torch.tensor(rewards_batch, dtype=torch.float).to(self.device),
-            torch.tensor(masks_batch, dtype=torch.float).to(self.device)
+            torch.tensor(state_batch, dtype=torch.float),
+            torch.tensor(next_state_batch, dtype=torch.float),
+            torch.tensor(actions_batch, dtype=torch.float),
+            torch.tensor(rewards_batch, dtype=torch.float),
+            torch.tensor(masks_batch, dtype=torch.float)
         )

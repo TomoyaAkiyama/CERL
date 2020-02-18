@@ -6,6 +6,7 @@ import torch.optim as optim
 import torch.nn.functional as F
 from models.deterministic_policy import DeterministicPolicy
 from models.double_q import DoubleQ
+from models.model_utils import init_weights
 
 
 class TD3:
@@ -26,9 +27,11 @@ class TD3:
     ):
 
         self.actor = DeterministicPolicy(state_dim, action_dim, hidden_sizes, wwid).to(device)
+        self.actor.apply(init_weights)
         self.target_actor = copy.deepcopy(self.actor)
         self.actor_optimizer = optim.Adam(params=self.actor.parameters(), lr=lr)
         self.critic = DoubleQ(state_dim, action_dim, hidden_sizes).to(device)
+        self.critic.apply(init_weights)
         self.target_critic = copy.deepcopy(self.critic)
         self.critic_optimizer = optim.Adam(params=self.critic.parameters(), lr=lr)
 
@@ -40,6 +43,7 @@ class TD3:
         self.policy_freq = policy_freq
 
         self.rollout_actor = TD3RolloutActor(state_dim, action_dim, hidden_sizes, wwid, exploration_noise)
+        self.sync_rollout_actor()
 
         self.iteration_num = 0
 
@@ -47,6 +51,12 @@ class TD3:
         self.iteration_num += 1
 
         st, nx_st, ac, rw, mask = replay_buffer.sample(batch_size)
+        st = st.to(self.device)
+        nx_st = nx_st.to(self.device)
+        ac = ac.to(self.device)
+        rw = rw.to(self.device)
+        mask = mask.to(self.device)
+
         with torch.no_grad():
             noise = (torch.randn_like(ac) * self.policy_noise).clamp(-self.noise_clip, self.noise_clip)
             nx_ac = (self.target_actor.forward(nx_st) + noise).clamp(0, 1)

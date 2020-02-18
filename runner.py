@@ -28,7 +28,7 @@ class Parameters:
         self.state_dim = dummy_env.observation_space.shape[0]
         self.action_dim = dummy_env.action_space.shape[0]
         self.hidden_sizes = [400, 300]
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.use_cuda = True
 
         # neuroevolution param
         self.pop_size = 10
@@ -59,24 +59,25 @@ def main():
 
         pop_fitness, learner_fitness, allocation_count, test_mean, test_std, champ_wwid = agent.train(gen, logger)
 
-        print('Gen {}, Frames {}, Frames/sec: {:.2f}'.format(gen, agent.total_frames, agent.total_frames / (time.time() - start_time)))
-        print('Population Fitness', pop_fitness)
-        print('Learner Average Fitness', learner_fitness)
-        print('Resource Allocation', allocation_count)
-        try:
-            print('Best Policy ever genealogy:', agent.genealogy.tree[int(agent.best_policy.wwid.item())].history)
-            print('Champ genealogy:', agent.genealogy.tree[champ_wwid].history)
-        except KeyError:
-            pass
-        print()
-
         if test_mean is not None:
-            message = 'Test_score for the champion: {:.3f} ({:.3f})'.format(test_mean, test_std)
+            message = 'Test Score of the Champ: {:.3f} ({:.3f})'.format(test_mean, test_std)
             print('=' * len(message))
             print(message)
             print('=' * len(message))
+            print()
 
-        if agent.total_frames > 100000:
+        print('Gen {}, Frames {}, Frames/sec: {:.2f}'.format(gen, agent.total_frames, agent.total_frames / (time.time() - start_time)))
+        print('\tPopulation Fitness', pop_fitness)
+        print('\tLearner Average Fitness', learner_fitness)
+        print('\tResource Allocation', allocation_count)
+        print()
+        print('\tBest Fitness ever: {:.3f}'.format(agent.best_score))
+        print('\tBest Policy ever genealogy:', agent.genealogy.tree[int(agent.best_policy.wwid.item())].history)
+        print('\tChamp Fitness: {:.3f}'.format(pop_fitness.max()))
+        print('\tChamp genealogy:', agent.genealogy.tree[champ_wwid].history)
+        print()
+
+        if agent.total_frames > 1000000:
             break
     logger.save()
 

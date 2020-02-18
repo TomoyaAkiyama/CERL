@@ -7,6 +7,7 @@ import torch.nn.functional as F
 
 from models.double_q import DoubleQ
 from models.gaussian_policy import GaussianPolicy
+from models.model_utils import init_weights
 
 
 class SAC:
@@ -26,9 +27,11 @@ class SAC:
         self.tau = tau
         self.target_entropy = - action_dim
 
-        self.critic = DoubleQ(state_dim, action_dim, hidden_sizes).to(device)
-        self.target_critic = copy.deepcopy(self.critic)
         self.actor = GaussianPolicy(state_dim, action_dim, hidden_sizes, wwid).to(device)
+        self.actor.apply(init_weights)
+        self.critic = DoubleQ(state_dim, action_dim, hidden_sizes).to(device)
+        self.critic.apply(init_weights)
+        self.target_critic = copy.deepcopy(self.critic)
         self.log_alpha = torch.nn.Parameter(torch.zeros(1).to(device), requires_grad=True)
         self.alpha = self.log_alpha.exp()
 
@@ -37,9 +40,15 @@ class SAC:
         self.alpha_optimizer = Adam([self.log_alpha], lr=lr)
 
         self.rollout_actor = SACRolloutActor(state_dim, action_dim, hidden_sizes, wwid)
+        self.sync_rollout_actor()
 
     def train(self, replay_buffer, batch_size=256):
         st, nx_st, ac, rw, mask = replay_buffer.random_batch(batch_size)
+        st = st.to(self.device)
+        nx_st = nx_st.to(self.device)
+        ac = ac.to(self.device)
+        rw = rw.to(self.device)
+        mask = mask.to(self.device)
 
         with torch.no_grad():
             nx_ac, nx_ac_log_prob = self.actor.sample(nx_st)

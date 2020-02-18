@@ -24,15 +24,15 @@ class CERL:
 
         # policies for EA's rollout
         self.population = self.manager.list()
-        for _ in range(args.pop_size):
-            wwid = self.genealogy.new_id('EA')
+        for i in range(args.pop_size):
+            wwid = self.genealogy.new_id('EA_{}'.format(i))
             policy = init_policy(args.state_dim, args.action_dim, args.hidden_sizes, wwid, args.policy_type).eval()
             self.population.append(policy)
         self.best_policy = init_policy(args.state_dim, args.action_dim, args.hidden_sizes, -1, args.policy_type).eval()
 
-        self.replay_buffer = ReplayBuffer(args.state_dim, args.action_dim, args.device, args.capacity)
+        self.replay_buffer = ReplayBuffer(args.state_dim, args.action_dim, args.capacity)
 
-        self.portfolio = init_portfolio(args.state_dim, args.action_dim, args.device, self.genealogy)
+        self.portfolio = init_portfolio(args.state_dim, args.action_dim, args.use_cuda, self.genealogy)
         # policies for learners' rollout
         self.rollout_bucket = self.manager.list()
         for learner in self.portfolio:
@@ -87,7 +87,7 @@ class CERL:
         for i in range(args.rollout_size):
             self.allocation.append(i % len(self.portfolio))
 
-        self.best_score = 0.0
+        self.best_score = - float('inf')
         self.gen_frames = 0
         self.total_frames = 0
 
@@ -126,7 +126,7 @@ class CERL:
             self.portfolio[learner_id].update_stats(fitness, num_frames)
             if fitness > self.best_score:
                 self.best_score = fitness
-                self.best_policy = deepcopy(self.portfolio[learner_id].algo.rollout_actor)
+                self.best_policy = deepcopy(self.portfolio[learner_id].algo.rollout_actor.actor)
         # calc average_fitness
         denom = np.array(alloc_count, dtype=np.float)
         denom[denom == 0] = np.nan
@@ -159,9 +159,8 @@ class CERL:
         logger.add_learner_value(self.total_frames, self.portfolio)
 
         # test champ policy in the population
-        # champion policy
         champ_index = pop_fitness.argmax()
-        self.test_bucket = deepcopy(self.population[champ_index])
+        self.test_bucket[0] = deepcopy(self.population[champ_index])
         test_frame = self.total_frames - self.gen_frames
         if gen % 5 == 1:
             for pipe in self.test_task_pipes:
@@ -169,12 +168,17 @@ class CERL:
 
         # update learners' parameters
         if len(self.replay_buffer) > self.args.batch_size * 10:
+            threads = []
             for learner in self.portfolio:
-                thread = threading.Thread(target=learner.update_parameters,
-                                          args=(self.replay_buffer, self.args.batch_size, int(self.gen_frames)))
+                threads.append(
+                    threading.Thread(target=learner.update_parameters,
+                                     args=(self.replay_buffer, self.args.batch_size, int(self.gen_frames)))
+                )
+            for thread in threads:
                 thread.start()
+            for thread in threads:
                 thread.join()
-                self.gen_frames = 0
+            self.gen_frames = 0
 
         # add all transitions to replay buffer
         self.replay_buffer.add_transitions(all_transitions)

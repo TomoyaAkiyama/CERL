@@ -16,3 +16,9 @@ def create_hidden_layers(input_dim, hidden_sizes, activation):
         layers.append(activations[activation])
 
     return layers
+
+
+def init_weights(m):
+    if type(m) == nn.Linear:
+        nn.init.kaiming_uniform_(m.weight)
+        m.bias.data.fill_(0.01)

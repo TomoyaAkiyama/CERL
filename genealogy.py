@@ -4,7 +4,7 @@ from copy import deepcopy
 class Info:
     def __init__(self, origin):
         self.origin = origin
-        self.history = []
+        self.history = [origin]
         self.crossover = []
         self.num_mut = 0.0
 

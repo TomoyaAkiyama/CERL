@@ -60,7 +60,7 @@ class SSNE:
             # this random value is used for deciding which weights are replaced
             receiver_choice = np.random.rand()
             # index for replacing
-            ind_cr = np.random.randint(0, w1.shape[0] - 1)
+            ind_cr = np.random.randint(0, w1.shape[0])
 
             if len(w1.shape) == 2:  # weights
                 num_variables = w1.shape[0]
@@ -104,8 +104,8 @@ class SSNE:
                 if np.random.rand() < ssne_prob:
                     num_mutations = np.random.randint(0, int(math.ceil(num_mutation_frac * num_weights)))
                     for _ in range(num_mutations):
-                        ind_dim1 = np.random.randint(0, w.shape[0] - 1)
-                        ind_dim2 = np.random.randint(0, w.shape[1] - 1)
+                        ind_dim1 = np.random.randint(0, w.shape[0])
+                        ind_dim2 = np.random.randint(0, w.shape[1])
                         random_num = np.random.rand()
 
                         if random_num < super_mut_prob:
@@ -126,7 +126,7 @@ class SSNE:
                 if np.random.rand() < ssne_prob:
                     num_mutations = np.random.randint(0, math.ceil(num_mutation_frac * num_weights))
                     for _ in range(num_mutations):
-                        ind_dim = np.random.randint(0, w.shape[0] - 1)
+                        ind_dim = np.random.randint(0, w.shape[0])
                         random_num = np.random.rand()
 
                         if random_num < super_mut_prob:
@@ -188,7 +188,7 @@ class SSNE:
 
         # crossover for unselected genes with probability 1
         if len(unselected) % 2 != 0:
-            unselected.append(unselected[np.random.randint(0, len(unselected) - 1)])
+            unselected.append(unselected[np.random.randint(0, len(unselected))])
         for i, j in zip(unselected[0::2], unselected[1::2]):
             off_i = np.random.choice(new_elitists)
             off_j = np.random.choice(offsprings)

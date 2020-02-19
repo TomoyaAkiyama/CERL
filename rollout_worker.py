@@ -15,7 +15,7 @@ def rollout_worker(index, task_pipe, result_pipe, explore, model_bucket, env_nam
         policy = model_bucket[identifier]
 
         fitness = 0.0
-        total_frame = 0
+        num_frames = 0
         state = env.reset()
         done = False
         rollout_transition = []
@@ -28,9 +28,9 @@ def rollout_worker(index, task_pipe, result_pipe, explore, model_bucket, env_nam
 
             next_state, reward, done, info = env.step(action)
             fitness += reward
-            total_frame += 1
+            num_frames += 1
 
-            done_buffer = done if total_frame < env.unwrapped()._max_episode_steps else False
+            done_buffer = done if num_frames < env.unwrapped()._max_episode_steps else False
 
             rollout_transition.append({
                 'state': state,

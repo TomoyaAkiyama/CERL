@@ -32,7 +32,8 @@ class CERL:
 
         self.replay_buffer = ReplayBuffer(args.state_dim, args.action_dim, args.capacity)
 
-        self.portfolio = init_portfolio(args.state_dim, args.action_dim, args.use_cuda, self.genealogy)
+        self.portfolio = init_portfolio(args.state_dim, args.action_dim, args.hidden_sizes,
+                                        args.use_cuda, self.genealogy, args.portfolio_id)
         # policies for learners' rollout
         self.rollout_bucket = self.manager.list()
         for learner in self.portfolio:
@@ -53,17 +54,17 @@ class CERL:
             worker.start()
 
         # Learner rollout workers
-        self.task_pipes = []
-        self.result_pipes = []
-        self.workers = []
+        self.learner_task_pipes = []
+        self.learner_result_pipes = []
+        self.learner_workers = []
         for index in range(args.rollout_size):
             task_pipe = Pipe()
             result_pipe = Pipe()
             worker_args = (index, task_pipe[1], result_pipe[0], True, self.rollout_bucket, args.env_name)
             worker = Process(target=rollout_worker, args=worker_args)
-            self.task_pipes.append(task_pipe)
-            self.result_pipes.append(result_pipe)
-            self.workers.append(worker)
+            self.learner_task_pipes.append(task_pipe)
+            self.learner_result_pipes.append(result_pipe)
+            self.learner_workers.append(worker)
             worker.start()
 
         # test bucket
@@ -73,7 +74,7 @@ class CERL:
         self.test_task_pipes = []
         self.test_result_pipes = []
         self.test_workers = []
-        for index in range(args.test_size):
+        for index in range(10):
             task_pipe = Pipe()
             result_pipe = Pipe()
             worker_args = (index, task_pipe[1], result_pipe[0], False, self.test_bucket, args.env_name)
@@ -113,7 +114,7 @@ class CERL:
     def receive_learner_rollout(self, all_transitions, alloc_count):
         learner_fitness = np.zeros(len(self.portfolio))
         for i in range(self.args.rollout_size):
-            entry = self.result_pipes[i][1].recv()
+            entry = self.learner_result_pipes[i][1].recv()
             learner_id = entry[0]
             fitness = entry[1]
             transitions = entry[2]
@@ -141,7 +142,7 @@ class CERL:
 
         # learners' rollout
         for rollout_index, learner_index in enumerate(self.allocation):
-            self.task_pipes[rollout_index][0].send(learner_index)
+            self.learner_task_pipes[rollout_index][0].send(learner_index)
 
         # logging allocation count
         alloc_counter = Counter(self.allocation)
@@ -161,10 +162,12 @@ class CERL:
         # test champ policy in the population
         champ_index = pop_fitness.argmax()
         self.test_bucket[0] = deepcopy(self.population[champ_index])
-        test_frame = self.total_frames - self.gen_frames
         if gen % 5 == 1:
             for pipe in self.test_task_pipes:
                 pipe[0].send(0)
+
+        # add all transitions to replay buffer
+        self.replay_buffer.add_transitions(all_transitions)
 
         # update learners' parameters
         if len(self.replay_buffer) > self.args.batch_size * 10:
@@ -180,9 +183,6 @@ class CERL:
                 thread.join()
             self.gen_frames = 0
 
-        # add all transitions to replay buffer
-        self.replay_buffer.add_transitions(all_transitions)
-
         if gen % 5 == 1:
             test_scores = []
             for pipe in self.test_result_pipes:
@@ -191,7 +191,7 @@ class CERL:
             test_mean = np.mean(test_scores)
             test_std = np.std(test_scores)
 
-            logger.add_test_score(test_frame, test_mean.item())
+            logger.add_test_score(self.total_frames, test_mean.item())
         else:
             test_mean = None
             test_std = None

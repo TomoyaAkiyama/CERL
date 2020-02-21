@@ -208,9 +208,8 @@ class CERL:
         # test champ policy in the population
         champ_index = pop_fitness.argmax()
         self.test_bucket[0] = deepcopy(self.population[champ_index])
-        if gen % 5 == 1:
-            for pipe in self.test_task_pipes:
-                pipe[0].send(0)
+        for pipe in self.test_task_pipes:
+            pipe[0].send(0)
 
         # add all transitions to replay buffer
         self.replay_buffer.add_transitions(all_transitions)

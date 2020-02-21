@@ -106,6 +106,7 @@ class TD3:
         self.actor.load_state_dict(torch.load(os.path.join(path, 'actor.pth')))
         self.target_actor.load_state_dict(torch.load(os.path.join(path, 'target_actor.pth')))
         self.actor_optimizer.load_state_dict(torch.load(os.path.join(path, 'actor_optimizer.pth')))
+        self.sync_rollout_actor()
 
 
 class TD3RolloutActor:

@@ -111,6 +111,7 @@ class SAC:
 
         self.actor.load_state_dict(torch.load(os.path.join(path, 'actor.pth')))
         self.actor_optimizer.load_state_dict(torch.load(os.path.join(path, 'actor_optimizer.pth')))
+        self.sync_rollout_actor()
 
         self.log_alpha = torch.nn.Parameter(torch.load(os.path.join(path, 'log_alpha.pth')), requires_grad=True)
         self.alpha = self.log_alpha.exp()

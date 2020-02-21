@@ -57,11 +57,6 @@ class SSNE:
             w1 = gene1.state_dict()[key]
             w2 = gene2.state_dict()[key]
 
-            # this random value is used for deciding which weights are replaced
-            receiver_choice = np.random.rand()
-            # index for replacing
-            ind_cr = np.random.randint(0, w1.shape[0])
-
             if len(w1.shape) == 2:  # weights
                 num_variables = w1.shape[0]
                 if int(num_variables * 0.3) < 1:
@@ -70,6 +65,10 @@ class SSNE:
                     num_cross_overs = 1
 
                 for _ in range(num_cross_overs):
+                    # this random value is used for deciding which weights are replaced
+                    receiver_choice = np.random.rand()
+                    # index for replacing
+                    ind_cr = np.random.randint(0, w1.shape[0])
                     if receiver_choice < 0.5:    # replace w1 weights
                         w1[ind_cr, :] = w2[ind_cr, :]
                     else:   # replace w2 weights
@@ -77,7 +76,10 @@ class SSNE:
             elif len(w1.shape) == 1:    # bias or LayerNorm
                 if np.random.rand() < 0.8:   # don't crossover
                     continue
-
+                # this random value is used for deciding which weights are replaced
+                receiver_choice = np.random.rand()
+                # index for replacing
+                ind_cr = np.random.randint(0, w1.shape[0])
                 if receiver_choice < 0.5:   # replace w1
                     w1[ind_cr] = w2[ind_cr]
                 else:   # replace w2

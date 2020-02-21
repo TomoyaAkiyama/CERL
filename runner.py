@@ -4,7 +4,6 @@ import time
 import torch
 import torch.backends.cudnn
 import numpy as np
-import gym
 
 from cerl import CERL
 from logger import Logger
@@ -12,51 +11,25 @@ from logger import Logger
 np.set_printoptions(precision=3)
 
 
-class Parameters:
-    def __init__(self):
-        self.env_name = 'HalfCheetah-v2'
-        self.portfolio_id = 'portfolio1'
-        self.seed = 1
-
-        # Learner's param
-        self.policy_type = 'Deterministic'
-        self.capacity = 1000000
-        self.batch_size = 256   # Batch size
-        self.rollout_size = 10    # Size of learner rollouts
-        self.ucb_coefficient = 0.9  # Exploration coefficient in UCB
-        dummy_env = gym.make(self.env_name)
-        self.state_dim = dummy_env.observation_space.shape[0]
-        self.action_dim = dummy_env.action_space.shape[0]
-        self.hidden_sizes = [400, 300]
-        self.use_cuda = True
-
-        # neuroevolution param
-        self.pop_size = 10
-        self.elite_fraction = 0.2
-        self.crossover_prob = 0.01
-        self.mutation_prob = 0.2
-        self.weight_magnitude_limit = 10000000
-
-
 def main(args):
     parent_dir = os.path.abspath(os.path.dirname(__file__))
     save_dir = os.path.join(
         parent_dir,
         'results',
-        args.portfolio_id,
-        args.env_name,
-        'seed{}'.format(args.seed)
+        args['portfolio_id'],
+        args['env_name'],
+        'seed{}'.format(args['seed'])
     )
     logger = Logger(save_dir)
 
-    torch.manual_seed(args.seed)
-    torch.cuda.manual_seed_all(args.seed)
+    torch.manual_seed(args['seed'])
+    torch.cuda.manual_seed_all(args['seed'])
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    np.random.seed(args.seed)
+    np.random.seed(args['seed'])
 
-    agent = CERL(args)
-    print('Running CERL for', args.env_name, 'State_dim:', args.state_dim, 'Action_dim:', args.action_dim)
+    agent = CERL(**args)
+    print('Running CERL for', args['env_name'])
 
     try:
         start_time = time.time()
@@ -65,12 +38,11 @@ def main(args):
             gen += 1
             pop_fitness, learner_fitness, allocation_count, test_mean, test_std, champ_wwid = agent.train(gen, logger)
 
-            if test_mean is not None:
-                message = 'Test Score of the Champ: {:.3f} ({:.3f})'.format(test_mean, test_std)
-                print('=' * len(message))
-                print(message)
-                print('=' * len(message))
-                print()
+            message = 'Test Score of the Champ: {:.3f} ({:.3f})'.format(test_mean, test_std)
+            print('=' * len(message))
+            print(message)
+            print('=' * len(message))
+            print()
 
             print('Gen {}, Frames {},'.format(gen, agent.total_frames),
                   'Frames/sec: {:.2f}'.format(agent.total_frames / (time.time() - start_time)))
@@ -108,7 +80,27 @@ def main(args):
 
 
 if __name__ == '__main__':
-    args = Parameters()
-    for seed in range(1, 3):
-        args.seed = seed
-        main(args)
+    args = {
+        'env_name': 'Swimmer-v2',
+        'seed': 1,
+        'rollout_size': 10,
+        'pop_size': 10,
+        'portfolio_id': 'portfolio1',
+        'policy_type': 'Deterministic',
+        'hidden_sizes': [400, 300],
+        'use_cuda': True,
+        'capacity': 1000000,
+        'batch_size': 256,
+        'ucb_coefficient': 0.9,
+        'elite_fraction': 0.2,
+        'cross_prob': 0.01,
+        'cross_fraction': 0.3,
+        'bias_cross_prob': 0.2,
+        'mutation_prob': 0.2,
+        'mut_strength': 0.02,
+        'mut_fraction': 0.03,
+        'super_mut_prob': 0.1,
+        'reset_prob': 0.2,
+    }
+
+    main(args)

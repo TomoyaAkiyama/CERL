@@ -29,11 +29,10 @@ class CERL:
             rollout_size=10,
             pop_size=10,
             portfolio_id='portfolio1',
-            policy_type='Deterministic',
-            hidden_sizes=None,
             use_cuda=False,
             capacity=int(1e6),
             batch_size=256,
+            kappa=0.2,
             ucb_coefficient=0.9,
             elite_fraction=0.2,
             cross_prob=0.01,
@@ -45,9 +44,6 @@ class CERL:
             super_mut_prob=0.1,
             reset_prob=0.2,
     ):
-        if hidden_sizes is None:
-            hidden_sizes = [400, 300]
-
         ea_kwargs = {
             'elite_fraction': elite_fraction,
             'cross_prob': cross_prob,
@@ -68,9 +64,16 @@ class CERL:
         self.pop_size = pop_size
 
         self.batch_size = batch_size
+        self.kappa = kappa
         self.ucb_coefficient = ucb_coefficient
 
         state_dim, action_dim = env_parse(env_name)
+
+        self.portfolio, policy_type, hidden_sizes = init_portfolio(state_dim, action_dim, use_cuda, self.genealogy, portfolio_id)
+        # policies for learners' rollout
+        self.rollout_bucket = self.manager.list()
+        for learner in self.portfolio:
+            self.rollout_bucket.append(learner.algo.rollout_actor)
 
         # policies for EA's rollout
         self.population = self.manager.list()
@@ -81,12 +84,6 @@ class CERL:
         self.best_policy = init_policy(state_dim, action_dim, hidden_sizes, -1, policy_type).eval()
 
         self.replay_buffer = ReplayBuffer(state_dim, action_dim, capacity)
-
-        self.portfolio = init_portfolio(state_dim, action_dim, hidden_sizes, use_cuda, self.genealogy, portfolio_id)
-        # policies for learners' rollout
-        self.rollout_bucket = self.manager.list()
-        for learner in self.portfolio:
-            self.rollout_bucket.append(learner.algo.rollout_actor)
 
         # Evolutionary population Rollout workers
         self.evo_task_pipes = []
@@ -173,7 +170,7 @@ class CERL:
 
             self.gen_frames += num_frames
             self.total_frames += num_frames
-            self.portfolio[learner_id].update_stats(fitness, num_frames)
+            self.portfolio[learner_id].update_stats(fitness, num_frames, self.kappa)
             if fitness > self.best_score:
                 self.best_score = fitness
                 self.best_policy = deepcopy(self.portfolio[learner_id].algo.rollout_actor.actor)

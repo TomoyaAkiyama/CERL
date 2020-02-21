@@ -11,25 +11,30 @@ from logger import Logger
 np.set_printoptions(precision=3)
 
 
-def main(args):
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+
+
+def main(env_name, seed, args):
     parent_dir = os.path.abspath(os.path.dirname(__file__))
     save_dir = os.path.join(
         parent_dir,
         'results',
         args['portfolio_id'],
-        args['env_name'],
-        'seed{}'.format(args['seed'])
+        env_name,
+        'seed{}'.format(seed)
     )
     logger = Logger(save_dir)
 
-    torch.manual_seed(args['seed'])
-    torch.cuda.manual_seed_all(args['seed'])
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
-    np.random.seed(args['seed'])
+    set_seed(seed)
 
+    args['env_name'] = env_name
     agent = CERL(**args)
-    print('Running CERL for', args['env_name'])
+    print('Running CERL for', env_name)
 
     try:
         start_time = time.time()
@@ -81,16 +86,13 @@ def main(args):
 
 if __name__ == '__main__':
     args = {
-        'env_name': 'Swimmer-v2',
-        'seed': 1,
         'rollout_size': 10,
         'pop_size': 10,
         'portfolio_id': 'portfolio1',
-        'policy_type': 'Deterministic',
-        'hidden_sizes': [400, 300],
-        'use_cuda': True,
+        'use_cuda': False,
         'capacity': 1000000,
         'batch_size': 256,
+        'kappa': 0.2,
         'ucb_coefficient': 0.9,
         'elite_fraction': 0.2,
         'cross_prob': 0.01,
@@ -103,4 +105,6 @@ if __name__ == '__main__':
         'reset_prob': 0.2,
     }
 
-    main(args)
+    env_name = 'Swimmer-v2'
+    seed = 1
+    main(env_name, seed, args)

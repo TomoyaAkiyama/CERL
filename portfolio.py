@@ -14,10 +14,13 @@ td3_kwargs = {
     }
 
 
-def init_portfolio(state_dim, action_dim, hidden_sizes, use_cuda, genealogy, portfolio_name):
+def init_portfolio(state_dim, action_dim, use_cuda, genealogy, portfolio_name):
     if portfolio_name == 'portfolio1':
         lr = 1e-3
         gammas = [0.9, 0.99, 0.997, 0.9995]
+        policy_type = 'Deterministic'
+        hidden_sizes = [400, 300]
+
         if use_cuda:
             devices = []
             gpu_num = torch.cuda.device_count()
@@ -35,4 +38,4 @@ def init_portfolio(state_dim, action_dim, hidden_sizes, use_cuda, genealogy, por
         print('There is no portfolio named {}'.format(portfolio_name))
         sys.exit()
 
-    return portfolio
+    return portfolio, policy_type, hidden_sizes

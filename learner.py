@@ -25,7 +25,7 @@ class Learner:
         for _ in range(iteration):
             self.algo.train(replay_buffer, batch_size)
 
-    def update_stats(self, fitness, ep_len, alpha=0.2):
+    def update_stats(self, fitness, ep_len, kappa=0.2):
         self.visit_count += 1
         self.fitnesses.append(fitness)
         self.ep_lens.append(ep_len)
@@ -33,4 +33,4 @@ class Learner:
         if self.value is None:
             self.value = fitness
         else:
-            self.value = alpha * fitness + (1. - alpha) * self.value
+            self.value = kappa * fitness + (1. - kappa) * self.value

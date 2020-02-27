@@ -69,7 +69,7 @@ class CERL:
 
         state_dim, action_dim = env_parse(env_name)
 
-        self.portfolio, policy_type, hidden_sizes = init_portfolio(state_dim, action_dim, use_cuda, self.genealogy, portfolio_id)
+        self.portfolio, policy_type, model_args = init_portfolio(state_dim, action_dim, use_cuda, self.genealogy, portfolio_id)
         # policies for learners' rollout
         self.rollout_bucket = self.manager.list()
         for learner in self.portfolio:
@@ -79,9 +79,9 @@ class CERL:
         self.population = self.manager.list()
         for i in range(pop_size):
             wwid = self.genealogy.new_id('EA_{}'.format(i))
-            policy = init_policy(state_dim, action_dim, hidden_sizes, wwid, policy_type).eval()
+            policy = init_policy(policy_type, model_args, wwid).eval()
             self.population.append(policy)
-        self.best_policy = init_policy(state_dim, action_dim, hidden_sizes, -1, policy_type).eval()
+        self.best_policy = init_policy(policy_type, model_args, -1).eval()
 
         self.replay_buffer = ReplayBuffer(state_dim, action_dim, capacity)
 
@@ -115,7 +115,7 @@ class CERL:
 
         # test bucket
         self.test_bucket = self.manager.list()
-        policy = init_policy(state_dim, action_dim, hidden_sizes, -1, policy_type)
+        policy = init_policy(policy_type, model_args, -1)
         self.test_bucket.append(policy)
         self.test_task_pipes = []
         self.test_result_pipes = []

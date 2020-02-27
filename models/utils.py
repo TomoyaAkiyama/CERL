@@ -4,11 +4,11 @@ from models.gaussian_policy import GaussianPolicy
 from models.deterministic_policy import DeterministicPolicy
 
 
-def init_policy(state_dim, action_dim, hidden_sizes, wwid, policy_type):
+def init_policy(policy_type, model_args, wwid):
     if policy_type == 'Deterministic':
-        policy = DeterministicPolicy(state_dim, action_dim, hidden_sizes, wwid)
+        policy = DeterministicPolicy(**model_args, wwid=wwid)
     elif policy_type == 'Gaussian':
-        policy = GaussianPolicy(state_dim, action_dim, hidden_sizes, wwid)
+        policy = GaussianPolicy(**model_args, wwid=wwid)
     else:
         print('Not implemented policy type: {}'.format(policy_type))
         sys.exit()

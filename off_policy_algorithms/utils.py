@@ -5,22 +5,18 @@ from off_policy_algorithms import TD3, SAC
 
 def init_algo(
         algo_name,
-        state_dim,
-        action_dim,
-        hidden_sizes,
+        model_args,
+        wwid,
         device,
         lr,
         gamma,
-        wwid,
         **kwargs,
 ):
 
     algo_kwargs = {
-        'state_dim': state_dim,
-        'action_dim': action_dim,
-        'hidden_sizes': hidden_sizes,
-        'device': device,
+        'model_args': model_args,
         'wwid': wwid,
+        'device': device,
         'lr': lr,
         'gamma': gamma
     }

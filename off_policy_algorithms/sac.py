@@ -13,11 +13,9 @@ from models.model_utils import init_weights
 class SAC:
     def __init__(
             self,
-            state_dim,
-            action_dim,
-            hidden_sizes,
-            device,
+            model_args,
             wwid,
+            device,
             gamma=0.99,
             tau=0.005,
             lr=3e-4
@@ -25,11 +23,11 @@ class SAC:
         self.device = device
         self.gamma = gamma
         self.tau = tau
-        self.target_entropy = - action_dim
+        self.target_entropy = - model_args['action_dim']
 
-        self.actor = GaussianPolicy(state_dim, action_dim, hidden_sizes, wwid).to(device)
+        self.actor = GaussianPolicy(**model_args, wwid=wwid).to(device)
         self.actor.apply(init_weights)
-        self.critic = DoubleQ(state_dim, action_dim, hidden_sizes).to(device)
+        self.critic = DoubleQ(**model_args).to(device)
         self.critic.apply(init_weights)
         self.target_critic = copy.deepcopy(self.critic)
         self.log_alpha = torch.nn.Parameter(torch.zeros(1).to(device), requires_grad=True)
@@ -39,7 +37,7 @@ class SAC:
         self.actor_optimizer = Adam(self.actor.parameters(), lr=lr)
         self.alpha_optimizer = Adam([self.log_alpha], lr=lr)
 
-        self.rollout_actor = SACRolloutActor(state_dim, action_dim, hidden_sizes, wwid)
+        self.rollout_actor = SACRolloutActor(model_args, wwid)
         self.sync_rollout_actor()
 
     def train(self, replay_buffer, batch_size=256):
@@ -120,12 +118,10 @@ class SAC:
 class SACRolloutActor:
     def __init__(
             self,
-            state_dim,
-            action_dim,
-            hidden_sizes,
+            model_args,
             wwid,
     ):
-        self.actor = GaussianPolicy(state_dim, action_dim, hidden_sizes, wwid).eval()
+        self.actor = GaussianPolicy(**model_args, wwid=wwid).eval()
 
     def select_action(self, state):
         action, _ = self.actor.sample(state)

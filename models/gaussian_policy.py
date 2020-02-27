@@ -15,14 +15,15 @@ class GaussianPolicy(nn.Module):
             state_dim,
             action_dim,
             hidden_sizes,
-            wwid,
             activation='ReLU',
+            layernorm=False,
+            wwid=-1,
     ):
         super(GaussianPolicy, self).__init__()
 
         self.wwid = torch.tensor([wwid])
 
-        shared_layers = create_hidden_layers(state_dim, hidden_sizes, activation)
+        shared_layers = create_hidden_layers(state_dim, hidden_sizes, activation, layernorm)
         self.shared_layers = nn.Sequential(*shared_layers)
         self.mean_layer = nn.Linear(hidden_sizes[-1], action_dim)
         self.log_std_layer = nn.Linear(hidden_sizes[-1], action_dim)

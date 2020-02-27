@@ -5,17 +5,15 @@ class Learner:
     def __init__(
             self,
             algo_name,
-            state_dim,
-            action_dim,
-            hidden_sizes,
+            model_args,
+            wwid,
             device,
             lr,
             gamma,
-            wwid,
             **kwargs
     ):
 
-        self.algo = init_algo(algo_name, state_dim, action_dim, hidden_sizes, device, lr, gamma, wwid, **kwargs)
+        self.algo = init_algo(algo_name, model_args, wwid, device, lr, gamma, **kwargs)
         self.fitnesses = []
         self.ep_lens = []
         self.value = None

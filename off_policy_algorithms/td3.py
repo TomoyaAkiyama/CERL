@@ -12,11 +12,9 @@ from models.model_utils import init_weights
 class TD3:
     def __init__(
             self,
-            state_dim,
-            action_dim,
-            hidden_sizes,
-            device,
+            model_args,
             wwid,
+            device,
             gamma=0.99,
             tau=0.005,
             lr=3e-4,
@@ -26,11 +24,11 @@ class TD3:
             policy_freq=2
     ):
 
-        self.actor = DeterministicPolicy(state_dim, action_dim, hidden_sizes, wwid).to(device)
+        self.actor = DeterministicPolicy(**model_args, wwid=wwid).to(device)
         self.actor.apply(init_weights)
         self.target_actor = copy.deepcopy(self.actor)
         self.actor_optimizer = optim.Adam(params=self.actor.parameters(), lr=lr)
-        self.critic = DoubleQ(state_dim, action_dim, hidden_sizes).to(device)
+        self.critic = DoubleQ(**model_args).to(device)
         self.critic.apply(init_weights)
         self.target_critic = copy.deepcopy(self.critic)
         self.critic_optimizer = optim.Adam(params=self.critic.parameters(), lr=lr)
@@ -42,7 +40,7 @@ class TD3:
         self.noise_clip = noise_clip
         self.policy_freq = policy_freq
 
-        self.rollout_actor = TD3RolloutActor(state_dim, action_dim, hidden_sizes, wwid, exploration_noise)
+        self.rollout_actor = TD3RolloutActor(model_args, wwid, exploration_noise)
         self.sync_rollout_actor()
 
         self.iteration_num = 0
@@ -112,13 +110,11 @@ class TD3:
 class TD3RolloutActor:
     def __init__(
             self,
-            state_dim,
-            action_dim,
-            hidden_sizes,
+            model_args,
             wwid,
             exploration_noise
     ):
-        self.actor = DeterministicPolicy(state_dim, action_dim, hidden_sizes, wwid).eval()
+        self.actor = DeterministicPolicy(**model_args, wwid=wwid).eval()
         self.exploration_noise = exploration_noise
 
     def select_action(self, state):

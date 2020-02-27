@@ -19,7 +19,13 @@ def init_portfolio(state_dim, action_dim, use_cuda, genealogy, portfolio_name):
         lr = 1e-3
         gammas = [0.9, 0.99, 0.997, 0.9995]
         policy_type = 'Deterministic'
-        hidden_sizes = [400, 300]
+        model_args = {
+            'state_dim': state_dim,
+            'action_dim': action_dim,
+            'hidden_sizes': [400, 300],
+            'activation': 'ReLU',
+            'layernorm': False
+        }
 
         if use_cuda:
             devices = []
@@ -32,10 +38,10 @@ def init_portfolio(state_dim, action_dim, use_cuda, genealogy, portfolio_name):
         for i, (device, gamma) in enumerate(zip(devices, gammas)):
             wwid = genealogy.new_id('Learner_{}'.format(i))
             portfolio.append(
-                Learner('TD3', state_dim, action_dim, hidden_sizes, device, lr, gamma, wwid, **td3_kwargs)
+                Learner('TD3', model_args, wwid, device, lr, gamma, **td3_kwargs)
             )
     else:
         print('There is no portfolio named {}'.format(portfolio_name))
         sys.exit()
 
-    return portfolio, policy_type, hidden_sizes
+    return portfolio, policy_type, model_args

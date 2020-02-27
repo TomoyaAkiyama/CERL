@@ -89,7 +89,7 @@ if __name__ == '__main__':
         'rollout_size': 10,
         'pop_size': 10,
         'portfolio_id': 'portfolio1',
-        'use_cuda': False,
+        'use_cuda': True,
         'capacity': 1000000,
         'batch_size': 256,
         'kappa': 0.2,
